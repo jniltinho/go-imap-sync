@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/howeyc/gopass"
+	"github.com/jniltinho/gopass"
 )
 
 func getPassword(username, server string) (password string) {
