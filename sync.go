@@ -9,10 +9,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/client"
@@ -29,12 +30,12 @@ type Result struct {
 func Sync(server, user, password, mailbox, emailDir string) (*Result, error) {
 	err := os.MkdirAll(emailDir, 0700)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating email directory %v: %v", emailDir, err)
+		return nil, fmt.Errorf("error creating email directory %v: %v", emailDir, err)
 	}
 
 	connection, err := connect(server, user, password)
 	if err != nil {
-		return nil, fmt.Errorf("Error connecting to %v: %v", server, err)
+		return nil, fmt.Errorf("error connecting to %v: %v", server, err)
 	}
 
 	defer func() {
@@ -46,7 +47,7 @@ func Sync(server, user, password, mailbox, emailDir string) (*Result, error) {
 
 	_, err = connection.Select(mailbox, true)
 	if err != nil {
-		return nil, fmt.Errorf("Error opening mailbox '%v': %v", mailbox, err)
+		return nil, fmt.Errorf("error opening mailbox '%v': %v", mailbox, err)
 	}
 
 	log.Printf("Listing all messages in %v...", mailbox)
@@ -59,7 +60,7 @@ func Sync(server, user, password, mailbox, emailDir string) (*Result, error) {
 		seqSet.AddNum(messageSeqNr)
 		err2 := fetchMessages(connection, emailDir, seqSet)
 		if err2 != nil {
-			return nil, fmt.Errorf("Error fetching message '%v': %v", messageSeqNr, err2)
+			return nil, fmt.Errorf("error fetching message '%v': %v", messageSeqNr, err2)
 		}
 		fmt.Println(".")
 	}
@@ -87,7 +88,21 @@ func Sync(server, user, password, mailbox, emailDir string) (*Result, error) {
 // connect performs an interactive connection to the given IMAP server
 func connect(server, username, password string) (*client.Client, error) {
 	log.Printf("Connecting to %v...", server)
-	c, err := client.DialTLS(server, nil)
+
+	parts := strings.Split(server, ":")
+	port, err := strconv.Atoi(parts[1])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Connect to the server
+	var c *client.Client
+	if port == 143 {
+		c, err = client.Dial(server)
+	} else {
+		c, err = client.DialTLS(server, nil)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -95,9 +110,9 @@ func connect(server, username, password string) (*client.Client, error) {
 
 	if err := c.Login(username, password); err != nil {
 		if err2 := c.Logout(); err2 != nil {
-			return nil, fmt.Errorf("Error while logging in to %v: %v\n(followup error: %v)", server, err, err2)
+			return nil, fmt.Errorf("error while logging in to %v: %v\n(followup error: %v)", server, err, err2)
 		}
-		return nil, fmt.Errorf("Error while logging in to %v: %v", server, err)
+		return nil, fmt.Errorf("error while logging in to %v: %v", server, err)
 	}
 	log.Printf("Logged in as user %v on %v.", username, server)
 	return c, nil
@@ -152,12 +167,12 @@ func fetchMessages(connection *client.Client, emailDir string, messagesToFetch *
 		if err != nil {
 			return err
 		}
-		body, err := ioutil.ReadAll(msg.GetBody(sectionName))
+		body, err := io.ReadAll(msg.GetBody(sectionName))
 		if err != nil {
 			return err
 		}
 		log.Printf("Writing message %v to %v", msg.Envelope.MessageId, messageFileName(emailDir, msg.Envelope.MessageId))
-		err = ioutil.WriteFile(messageFileName(emailDir, msg.Envelope.MessageId), body, 0600)
+		err = os.WriteFile(messageFileName(emailDir, msg.Envelope.MessageId), body, 0600)
 		if err != nil {
 			return err
 		}
