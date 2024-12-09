@@ -4,7 +4,6 @@ go 1.20
 
 require (
 	github.com/emersion/go-imap v1.2.1
-	github.com/howeyc/gopass v0.0.0-20210920133722-c8aef6fb66ef
 )
 
 require (
