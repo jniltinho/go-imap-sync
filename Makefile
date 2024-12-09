@@ -13,7 +13,7 @@ get:
 
 build:
 	CGO_ENABLED=0 $(GOBUILD) -o $(BINARY_NAME) -v -ldflags="-s -w"
-	@upx $(BINARY_NAME)
+	#@upx $(BINARY_NAME)
 
 
 test: build

@@ -9,8 +9,10 @@ derived from the email message ID. This enables imapsync to avoid downloading em
 
 ## Usage from the Command Line
 ```
-go get github.com/jniltinho/go-imap-sync/go-imap-sync
-go-imap-sync -server mail.example.com:993 -username me -mailbox INBOX
+git clone https://github.com/jniltinho/go-imap-sync.git
+cd go-imap-sync
+make
+./go-imap-sync -server mail.example.com:993 -username me -mailbox INBOX
 ```
 You will be prompted for your password. If you use the program in scripts, you can also set the `IMAP_PASSWORD`
 environment variable.
